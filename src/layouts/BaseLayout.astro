@@ -1,0 +1,62 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/layout/Footer.astro';
+import Header from '../components/layout/Header.astro';
+import { SITE } from '../config/site';
+
+interface Props {
+  title: string;
+  description?: string;
+  lang?: string;
+}
+
+const { title, description = SITE.description, lang = SITE.lang } = Astro.props;
+---
+
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <script is:inline>
+      (() => {
+        try {
+          const root = document.documentElement;
+          const THEME_KEY = 'theme-preference';
+          const CONTRAST_KEY = 'contrast-preference';
+          const FONT_SIZE_KEY = 'font-size-preference';
+          const FONT_SIZES = [100, 130];
+
+          const savedTheme = localStorage.getItem(THEME_KEY);
+          const savedContrast = localStorage.getItem(CONTRAST_KEY);
+          const savedFontSize = Number(localStorage.getItem(FONT_SIZE_KEY));
+
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          const prefersHighContrast = window.matchMedia('(prefers-contrast: more)').matches;
+
+          const theme = savedTheme === 'light' || savedTheme === 'dark' ? savedTheme : prefersDark ? 'dark' : 'light';
+
+          const contrast =
+            savedContrast === 'high' || savedContrast === 'normal'
+              ? savedContrast
+              : prefersHighContrast
+                ? 'high'
+                : 'normal';
+
+          const fontSize = FONT_SIZES.includes(savedFontSize) ? savedFontSize : 100;
+
+          root.dataset.theme = theme;
+          root.dataset.contrast = contrast;
+          root.dataset.fontSize = String(fontSize);
+        } catch {
+          // Ignore localStorage or matchMedia errors.
+        }
+      })();
+    </script>
+    <BaseHead title={title} description={description} />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <Header />
+    <slot />
+    <Footer />
+  </body>
+</html>

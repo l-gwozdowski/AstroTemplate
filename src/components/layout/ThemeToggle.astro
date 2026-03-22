@@ -1,0 +1,235 @@
+---
+import { Icon } from 'astro-icon/components';
+---
+
+<div class="accessibility-controls" role="group" aria-label="Display settings">
+  <button
+    id="theme-toggle"
+    type="button"
+    class="accessibility-btn"
+    aria-pressed="false"
+    aria-label="Current theme: Light. Switch to Dark theme."
+  >
+    <span id="theme-toggle-icon" aria-hidden="true" class="accessibility-icon theme-icon-wrap">
+      <Icon name="tabler:sun" class="theme-icon theme-icon-light" />
+      <Icon name="tabler:moon" class="theme-icon theme-icon-dark" />
+    </span>
+    <span class="sr-only">Theme toggle</span>
+  </button>
+
+  <button
+    id="contrast-toggle"
+    type="button"
+    class="accessibility-btn"
+    aria-pressed="false"
+    aria-label="Current contrast: Normal. Switch to High contrast."
+  >
+    <span aria-hidden="true" class="accessibility-icon">
+      <Icon name="tabler:contrast-2" class="control-icon" />
+    </span>
+    <span class="sr-only">High contrast toggle</span>
+  </button>
+
+  <div class="font-size-controls" role="group" aria-label="Font size controls">
+    <button
+      id="font-size-decrease"
+      type="button"
+      class="font-size-btn"
+      aria-label="Set normal font size"
+    >
+      <Icon name="tabler:zoom-out" class="font-size-icon" aria-hidden="true" />
+      <span class="sr-only">Set normal font size</span>
+    </button>
+    <output id="font-size-value" class="sr-only" aria-live="polite">Font size 100%</output>
+    <button
+      id="font-size-increase"
+      type="button"
+      class="font-size-btn"
+      aria-label="Set larger font size"
+    >
+      <Icon name="tabler:zoom-in" class="font-size-icon" aria-hidden="true" />
+      <span class="sr-only">Set larger font size</span>
+    </button>
+  </div>
+</div>
+
+<script is:inline>
+  (() => {
+    const THEME_KEY = 'theme-preference';
+    const CONTRAST_KEY = 'contrast-preference';
+    const FONT_SIZE_KEY = 'font-size-preference';
+    const FONT_SIZES = [100, 130];
+
+    const root = document.documentElement;
+    const themeButton = document.getElementById('theme-toggle');
+    const contrastButton = document.getElementById('contrast-toggle');
+    const decreaseButton = document.getElementById('font-size-decrease');
+    const increaseButton = document.getElementById('font-size-increase');
+    const fontSizeValue = document.getElementById('font-size-value');
+    const colorMedia = window.matchMedia('(prefers-color-scheme: dark)');
+    const contrastMedia = window.matchMedia('(prefers-contrast: more)');
+
+    if (!(themeButton instanceof HTMLButtonElement)) return;
+    if (!(contrastButton instanceof HTMLButtonElement)) return;
+    if (!(decreaseButton instanceof HTMLButtonElement)) return;
+    if (!(increaseButton instanceof HTMLButtonElement)) return;
+    if (!(fontSizeValue instanceof HTMLOutputElement)) return;
+    if (themeButton.dataset.enhanced === 'true') return;
+
+    const capitalize = (value) => value.charAt(0).toUpperCase() + value.slice(1);
+
+    const getStoredTheme = () => {
+      try {
+        const saved = localStorage.getItem(THEME_KEY);
+        return saved === 'light' || saved === 'dark' ? saved : null;
+      } catch {
+        return null;
+      }
+    };
+
+    const getStoredContrast = () => {
+      try {
+        const saved = localStorage.getItem(CONTRAST_KEY);
+        return saved === 'high' || saved === 'normal' ? saved : null;
+      } catch {
+        return null;
+      }
+    };
+
+    const getStoredFontSize = () => {
+      try {
+        const saved = Number(localStorage.getItem(FONT_SIZE_KEY));
+        return FONT_SIZES.includes(saved) ? saved : null;
+      } catch {
+        return null;
+      }
+    };
+
+    const getSystemTheme = () => (colorMedia.matches ? 'dark' : 'light');
+    const getSystemContrast = () => (contrastMedia.matches ? 'high' : 'normal');
+
+    const getCurrentTheme = () => (root.dataset.theme === 'dark' ? 'dark' : 'light');
+    const getCurrentContrast = () => (root.dataset.contrast === 'high' ? 'high' : 'normal');
+
+    const getCurrentFontSize = () => {
+      const size = Number(root.dataset.fontSize);
+      return FONT_SIZES.includes(size) ? size : 100;
+    };
+
+    const syncThemeToggleState = () => {
+      const isLocked = getCurrentContrast() === 'high';
+      const currentTheme = getCurrentTheme();
+      const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+      themeButton.disabled = isLocked;
+      themeButton.setAttribute('aria-disabled', String(isLocked));
+      themeButton.setAttribute(
+        'aria-label',
+        isLocked
+          ? 'Theme switch is unavailable while high contrast mode is enabled.'
+          : `Current theme: ${capitalize(currentTheme)}. Switch to ${capitalize(nextTheme)} theme.`,
+      );
+    };
+
+    const applyTheme = (theme) => {
+      const safeTheme = theme === 'dark' ? 'dark' : 'light';
+
+      root.dataset.theme = safeTheme;
+      themeButton.dataset.theme = safeTheme;
+      themeButton.setAttribute('aria-pressed', String(safeTheme === 'dark'));
+
+      syncThemeToggleState();
+    };
+
+    const applyContrast = (mode) => {
+      const safeContrast = mode === 'high' ? 'high' : 'normal';
+      const nextContrast = safeContrast === 'high' ? 'normal' : 'high';
+
+      root.dataset.contrast = safeContrast;
+      contrastButton.dataset.contrast = safeContrast;
+      contrastButton.setAttribute('aria-pressed', String(safeContrast === 'high'));
+      contrastButton.setAttribute(
+        'aria-label',
+        `Current contrast: ${capitalize(safeContrast)}. Switch to ${capitalize(nextContrast)} contrast.`,
+      );
+
+      syncThemeToggleState();
+    };
+
+    const applyFontSize = (size) => {
+      const safeSize = FONT_SIZES.includes(size) ? size : 100;
+
+      root.dataset.fontSize = String(safeSize);
+      fontSizeValue.textContent = `Font size ${safeSize}%`;
+
+      const isNormal = safeSize === 100;
+      decreaseButton.disabled = isNormal;
+      increaseButton.disabled = !isNormal;
+      decreaseButton.setAttribute('aria-label', `Set normal font size (current ${safeSize}%)`);
+      increaseButton.setAttribute('aria-label', `Set larger font size (current ${safeSize}%)`);
+    };
+
+    const setStoredValue = (key, value) => {
+      try {
+        localStorage.setItem(key, value);
+      } catch {
+        // Ignore localStorage write errors.
+      }
+    };
+
+    const initialTheme = getStoredTheme() || getSystemTheme();
+    const initialContrast = getStoredContrast() || getSystemContrast();
+    const initialFontSize = getStoredFontSize() || 100;
+
+    applyTheme(initialTheme);
+    applyContrast(initialContrast);
+    applyFontSize(initialFontSize);
+
+    themeButton.dataset.enhanced = 'true';
+
+    themeButton.addEventListener('click', () => {
+      if (getCurrentContrast() === 'high') return;
+      const nextTheme = getCurrentTheme() === 'dark' ? 'light' : 'dark';
+      setStoredValue(THEME_KEY, nextTheme);
+      applyTheme(nextTheme);
+    });
+
+    contrastButton.addEventListener('click', () => {
+      const nextContrast = getCurrentContrast() === 'high' ? 'normal' : 'high';
+      setStoredValue(CONTRAST_KEY, nextContrast);
+      applyContrast(nextContrast);
+    });
+
+    decreaseButton.addEventListener('click', () => {
+      if (getCurrentFontSize() === 100) return;
+      setStoredValue(FONT_SIZE_KEY, '100');
+      applyFontSize(100);
+    });
+
+    increaseButton.addEventListener('click', () => {
+      if (getCurrentFontSize() === 130) return;
+      setStoredValue(FONT_SIZE_KEY, '130');
+      applyFontSize(130);
+    });
+
+    const handleSystemThemeChange = () => {
+      if (!getStoredTheme()) {
+        applyTheme(getSystemTheme());
+      }
+    };
+
+    const handleSystemContrastChange = () => {
+      if (!getStoredContrast()) {
+        applyContrast(getSystemContrast());
+      }
+    };
+
+    if (typeof colorMedia.addEventListener === 'function') {
+      colorMedia.addEventListener('change', handleSystemThemeChange);
+    }
+
+    if (typeof contrastMedia.addEventListener === 'function') {
+      contrastMedia.addEventListener('change', handleSystemContrastChange);
+    }
+  })();
+</script>

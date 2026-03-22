@@ -1,0 +1,28 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+
+type Props = HTMLAttributes<'a'>;
+
+const { href = '/', class: className, ...props } = Astro.props;
+
+const normalizePath = (value: string) => {
+  const path = value.replace(import.meta.env.BASE_URL, '').replace(/\/+$/, '');
+  return path === '' ? '/' : path;
+};
+
+const hrefValue = String(href);
+const [rawTargetPath, rawTargetHash = ''] = hrefValue.split('#');
+const targetPath = normalizePath(rawTargetPath || '/');
+const currentPath = normalizePath(Astro.url.pathname);
+const isHashLink = rawTargetHash.length > 0;
+
+const isActive = isHashLink
+  ? currentPath === '/' && rawTargetHash === 'home'
+  : targetPath === '/'
+    ? currentPath === '/'
+    : currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
+---
+
+<a href={href} class:list={[className, 'header-link', { active: isActive }]} {...props}>
+  <slot />
+</a>

@@ -1,0 +1,48 @@
+---
+import { getCollection } from 'astro:content';
+import FormattedDate from '../../components/FormattedDate.astro';
+import { SITE } from '../../config/site';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+---
+
+<BaseLayout title={`Blog | ${SITE.title}`} description={SITE.description}>
+  <main id="main-content" tabindex="-1" class="blog-shell">
+    <section class="blog-head">
+      <p class="eyebrow">Content</p>
+      <h1>Insights and updates</h1>
+      <p class="lead">
+        Use this route as your default article listing. Filter, paginate, or split by category when needed.
+      </p>
+    </section>
+
+    {
+      posts.length ? (
+        <section>
+          <ul class="blog-grid">
+            {
+              posts.map((post) => (
+                <li>
+                  <a class="entry-card" href={`/blog/${post.id}/`}>
+                    <p class="entry-date">
+                      <FormattedDate date={post.data.pubDate} />
+                    </p>
+                    <h2>{post.data.title}</h2>
+                    <p>{post.data.description}</p>
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </section>
+      ) : (
+        <section class="latest-panel">
+          <p class="empty-state">No posts found. Add files in `src/content/blog`.</p>
+        </section>
+      )
+    }
+  </main>
+</BaseLayout>

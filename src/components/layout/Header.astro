@@ -1,0 +1,22 @@
+---
+import { SITE } from '../../config/site';
+import Navigation from './Navigation.astro';
+import ThemeToggle from './ThemeToggle.astro';
+---
+
+<header class="site-header">
+  <div class="inner">
+    <a class="brand" href="/" aria-label={`${SITE.title} home`}>
+      <span class="badge" aria-hidden="true">ST</span>
+      <div>
+        <strong>{SITE.title}</strong>
+        <small>{SITE.tagline}</small>
+      </div>
+    </a>
+
+    <div class="header-controls">
+      <Navigation />
+      <ThemeToggle />
+    </div>
+  </div>
+</header>

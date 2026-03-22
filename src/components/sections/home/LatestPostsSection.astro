@@ -1,0 +1,39 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import FormattedDate from '../../FormattedDate.astro';
+
+interface Props {
+  posts: CollectionEntry<'blog'>[];
+}
+
+const { posts } = Astro.props;
+---
+
+<section class="latest-panel" aria-labelledby="latest-posts">
+  <div class="section-head">
+    <h2 id="latest-posts">From the blog</h2>
+    <a href="/blog">All posts</a>
+  </div>
+
+  {
+    posts.length ? (
+      <ul class="post-list">
+        {
+          posts.map((post) => (
+            <li>
+              <a class="post-tile" href={`/blog/${post.id}/`}>
+                <p class="post-date">
+                  <FormattedDate date={post.data.pubDate} />
+                </p>
+                <h3>{post.data.title}</h3>
+                <p>{post.data.description}</p>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    ) : (
+      <p class="empty-state">No posts yet. Add a file in `src/content/blog`.</p>
+    )
+  }
+</section>

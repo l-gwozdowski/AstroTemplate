@@ -1,0 +1,31 @@
+---
+import { CONTACT } from '../../../config/site';
+---
+
+<section id="contact" aria-labelledby="contact-title" class="cta-panel">
+  <p class="eyebrow">Contact</p>
+  <h2 id="contact-title">Ready to turn this into your own one-pager?</h2>
+  <p>
+    Use this final section as your conversion block. Keep one clear action and direct contact details.
+  </p>
+
+  <ul class="contact-list" role="list">
+    <li>
+      <strong>Email:</strong>
+      <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
+    </li>
+    <li>
+      <strong>Phone:</strong>
+      <a href={CONTACT.phoneHref}>{CONTACT.phoneLabel}</a>
+    </li>
+    <li>
+      <strong>Address:</strong>
+      <span>{CONTACT.address}</span>
+    </li>
+  </ul>
+
+  <div class="hero-actions">
+    <a class="button-primary" href={`mailto:${CONTACT.email}`}>Send email</a>
+    <a class="button-ghost" href="/blog">Read blog</a>
+  </div>
+</section>

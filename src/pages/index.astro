@@ -1,17 +1,24 @@
 ---
+import { getCollection } from 'astro:content';
+import HeroSection from '../components/sections/home/HeroSection.astro';
+import AboutSection from '../components/sections/home/AboutSection.astro';
+import FeatureSection from '../components/sections/home/FeatureSection.astro';
+import LatestPostsSection from '../components/sections/home/LatestPostsSection.astro';
+import CtaSection from '../components/sections/home/CtaSection.astro';
+import { SITE } from '../config/site';
+import BaseLayout from '../layouts/BaseLayout.astro';
 
+const latestPosts = (await getCollection('blog', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, 3);
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<BaseLayout title={SITE.title} description={SITE.description}>
+  <main id="main-content" tabindex="-1" class="home-shell">
+    <HeroSection />
+    <AboutSection />
+    <FeatureSection />
+    <LatestPostsSection posts={latestPosts} />
+    <CtaSection />
+  </main>
+</BaseLayout>

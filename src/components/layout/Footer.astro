@@ -1,0 +1,15 @@
+---
+import { AUTHOR, SITE } from '../../config/site';
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="inner">
+    <p><strong>{SITE.title}</strong> by {AUTHOR.name}</p>
+    <p>
+      {AUTHOR.role} | {AUTHOR.location} |
+      <a href={`mailto:${AUTHOR.email}`}>{AUTHOR.email}</a>
+    </p>
+    <small>(c) {year} {SITE.title}.</small>
+  </div>
+</footer>

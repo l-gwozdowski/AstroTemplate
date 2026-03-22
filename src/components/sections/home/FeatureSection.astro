@@ -1,0 +1,19 @@
+---
+import { HOME_FEATURES } from '../../../config/site';
+---
+
+<section id="services" class="feature-panel" aria-labelledby="services-title">
+  <div class="section-head">
+    <h2 id="services-title">Services</h2>
+  </div>
+  <ul class="feature-grid" role="list">
+    {
+      HOME_FEATURES.map((feature) => (
+        <li class="feature-card">
+          <h3>{feature.title}</h3>
+          <p>{feature.description}</p>
+        </li>
+      ))
+    }
+  </ul>
+</section>

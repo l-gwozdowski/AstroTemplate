@@ -1,0 +1,271 @@
+---
+import { Icon } from 'astro-icon/components';
+import { NAV_LINKS } from '../../config/site';
+import HeaderLink from './HeaderLink.astro';
+
+const isHomeLink = (href: string) => href === '/#home';
+---
+
+<nav aria-label="Primary navigation" class="primary-nav">
+  <ul class="desktop-nav">
+    {
+      NAV_LINKS.map((link) => (
+        <li>
+          <HeaderLink href={link.href} aria-label={isHomeLink(link.href) ? 'Home' : undefined}>
+            {
+              isHomeLink(link.href) ? (
+                <>
+                  <Icon name="tabler:home" class="nav-home-icon" aria-hidden="true" />
+                  <span class="sr-only">Home</span>
+                </>
+              ) : (
+                link.label
+              )
+            }
+          </HeaderLink>
+        </li>
+      ))
+    }
+  </ul>
+
+  <button
+    id="mobile-nav-toggle"
+    type="button"
+    class="mobile-nav-toggle"
+    aria-label="Open navigation menu"
+    aria-controls="mobile-nav-panel"
+    aria-expanded="false"
+  >
+    <span class="sr-only">Menu</span>
+    <svg
+      aria-hidden="true"
+      class="hamburger-icon"
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+    >
+      <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+    </svg>
+  </button>
+
+  <ul id="mobile-nav-panel" class="mobile-nav-panel">
+    {
+      NAV_LINKS.map((link) => (
+        <li>
+          <HeaderLink
+            class="mobile-header-link"
+            href={link.href}
+            aria-label={isHomeLink(link.href) ? 'Home' : undefined}
+          >
+            {
+              isHomeLink(link.href) ? (
+                <>
+                  <Icon name="tabler:home" class="nav-home-icon" aria-hidden="true" />
+                  <span class="sr-only">Home</span>
+                </>
+              ) : (
+                link.label
+              )
+            }
+          </HeaderLink>
+        </li>
+      ))
+    }
+  </ul>
+</nav>
+
+<script is:inline>
+  (() => {
+    const nav = document.querySelector('.primary-nav');
+    if (!(nav instanceof HTMLElement)) return;
+
+    const normalizePath = (value) => {
+      const path = value.replace(/\/+$/, '');
+      return path === '' ? '/' : path;
+    };
+
+    const mobileToggle = nav.querySelector('#mobile-nav-toggle');
+    const mobilePanel = nav.querySelector('#mobile-nav-panel');
+    let isMobileOpen = false;
+
+    const setMobileMenuState = (open) => {
+      if (!(mobileToggle instanceof HTMLButtonElement)) return;
+      if (!(mobilePanel instanceof HTMLElement)) return;
+
+      isMobileOpen = open;
+      mobilePanel.classList.toggle('is-open', open);
+      mobileToggle.classList.toggle('is-open', open);
+      mobilePanel.setAttribute('aria-hidden', open ? 'false' : 'true');
+      mobileToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      mobileToggle.setAttribute('aria-label', open ? 'Close navigation menu' : 'Open navigation menu');
+    };
+
+    const links = Array.from(nav.querySelectorAll('.header-link')).filter(
+      (link) => link instanceof HTMLAnchorElement,
+    );
+
+    const anchorIds = Array.from(
+      new Set(
+        links
+          .map((link) => link.getAttribute('href') || '')
+          .filter((href) => href.startsWith('/#'))
+          .map((href) => href.slice(2))
+          .filter(Boolean),
+      ),
+    );
+
+    let sections = [];
+
+    const collectSections = () => {
+      sections = anchorIds
+        .map((id) => ({ id, element: document.getElementById(id) }))
+        .filter((entry) => entry.element instanceof HTMLElement);
+    };
+
+    const clearActiveLinks = () => {
+      links.forEach((link) => {
+        link.classList.remove('active');
+        link.removeAttribute('aria-current');
+      });
+    };
+
+    const applyActiveState = (predicate, currentValue) => {
+      let anyActive = false;
+      links.forEach((link) => {
+        const active = predicate(link);
+        link.classList.toggle('active', active);
+        if (active) {
+          link.setAttribute('aria-current', currentValue);
+          anyActive = true;
+        } else {
+          link.removeAttribute('aria-current');
+        }
+      });
+      return anyActive;
+    };
+
+    const setActiveByPath = () => {
+      const currentPath = normalizePath(window.location.pathname);
+      return applyActiveState((link) => {
+        const href = link.getAttribute('href') || '/';
+        if (href.startsWith('/#')) return false;
+
+        const targetPath = normalizePath(new URL(href, window.location.origin).pathname);
+        if (targetPath === '/') return currentPath === '/';
+        return currentPath === targetPath || currentPath.startsWith(`${targetPath}/`);
+      }, 'page');
+    };
+
+    const setActiveBySection = (sectionId) =>
+      applyActiveState((link) => (link.getAttribute('href') || '') === `/#${sectionId}`, 'location');
+
+    const updateHomeSectionActive = () => {
+      if (normalizePath(window.location.pathname) !== '/') return false;
+      if (!anchorIds.length) return false;
+
+      const hashId = window.location.hash.replace('#', '');
+      if (hashId && anchorIds.includes(hashId)) {
+        setActiveBySection(hashId);
+        return true;
+      }
+
+      if (!sections.length) collectSections();
+      if (!sections.length) return false;
+
+      const triggerLine = 180;
+      let currentId = sections[0].id;
+
+      for (const section of sections) {
+        if (!(section.element instanceof HTMLElement)) continue;
+        if (section.element.getBoundingClientRect().top <= triggerLine) {
+          currentId = section.id;
+        }
+      }
+
+      setActiveBySection(currentId);
+      return true;
+    };
+
+    const updateActiveLinks = () => {
+      if (updateHomeSectionActive()) return;
+      if (!setActiveByPath()) clearActiveLinks();
+    };
+
+    const setupMobileNav = () => {
+      if (!(mobileToggle instanceof HTMLButtonElement)) return;
+      if (!(mobilePanel instanceof HTMLElement)) return;
+      if (nav.dataset.mobileEnhanced === 'true') return;
+
+      nav.dataset.mobileEnhanced = 'true';
+      mobilePanel.classList.add('is-enhanced');
+      setMobileMenuState(false);
+
+      mobileToggle.addEventListener('click', (event) => {
+        event.stopPropagation();
+        setMobileMenuState(!isMobileOpen);
+      });
+
+      mobilePanel.addEventListener('click', (event) => {
+        event.stopPropagation();
+      });
+
+      document.addEventListener('click', (event) => {
+        if (!isMobileOpen) return;
+        const target = event.target;
+        if (!(target instanceof Node)) return;
+        if (!mobilePanel.contains(target) && !mobileToggle.contains(target)) {
+          setMobileMenuState(false);
+        }
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && isMobileOpen) {
+          setMobileMenuState(false);
+          mobileToggle.focus();
+        }
+      });
+
+      nav.querySelectorAll('.mobile-nav-panel .header-link').forEach((link) => {
+        if (!(link instanceof HTMLAnchorElement)) return;
+        link.addEventListener('click', () => setMobileMenuState(false));
+      });
+
+      window.addEventListener('resize', () => {
+        if (window.innerWidth > 780 && isMobileOpen) {
+          setMobileMenuState(false);
+        }
+        collectSections();
+        updateActiveLinks();
+      });
+    };
+
+    const init = () => {
+      setupMobileNav();
+      collectSections();
+      updateActiveLinks();
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init, { once: true });
+    } else {
+      init();
+    }
+
+    document.addEventListener('astro:page-load', () => {
+      collectSections();
+      updateActiveLinks();
+      setMobileMenuState(false);
+    });
+
+    window.addEventListener('hashchange', updateActiveLinks);
+    window.addEventListener(
+      'scroll',
+      () => {
+        if (normalizePath(window.location.pathname) === '/') {
+          updateHomeSectionActive();
+        }
+      },
+      { passive: true },
+    );
+  })();
+</script>

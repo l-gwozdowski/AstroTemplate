@@ -1,0 +1,66 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import FormattedDate from '../components/FormattedDate.astro';
+import { SITE } from '../config/site';
+import BaseLayout from './BaseLayout.astro';
+
+type BlogEntry = CollectionEntry<'blog'>;
+type BlogPostData = BlogEntry['data'];
+
+type Props = BlogPostData & {
+  previousPost?: BlogEntry | null;
+  nextPost?: BlogEntry | null;
+};
+
+const {
+  title,
+  description,
+  pubDate,
+  updatedDate,
+  previousPost = null,
+  nextPost = null,
+} = Astro.props as Props;
+---
+
+<BaseLayout title={`${title} | ${SITE.title}`} description={description}>
+  <main id="main-content" tabindex="-1" class="post-shell">
+    <article class="post-card">
+      <div class="post-head">
+        <a class="back-link" href="/blog">Back to blog</a>
+        <p class="post-meta">
+          <FormattedDate date={pubDate} />
+          {updatedDate && (
+            <span class="updated-on">
+              | Updated <FormattedDate date={updatedDate} />
+            </span>
+          )}
+        </p>
+        <h1>{title}</h1>
+        <p class="description">{description}</p>
+      </div>
+
+      <div class="prose">
+        <slot />
+      </div>
+
+      {
+        (previousPost || nextPost) && (
+          <nav class="post-pagination" aria-label="Post navigation">
+            {previousPost && (
+              <a class="post-nav-link" href={`/blog/${previousPost.id}/`}>
+                <span class="post-nav-label">Previous post</span>
+                <span class="post-nav-title">{previousPost.data.title}</span>
+              </a>
+            )}
+            {nextPost && (
+              <a class="post-nav-link" href={`/blog/${nextPost.id}/`}>
+                <span class="post-nav-label">Next post</span>
+                <span class="post-nav-title">{nextPost.data.title}</span>
+              </a>
+            )}
+          </nav>
+        )
+      }
+    </article>
+  </main>
+</BaseLayout>
